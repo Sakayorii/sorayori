@@ -9,6 +9,7 @@
 
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html,
@@ -24,6 +25,8 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 button,
@@ -33,7 +36,21 @@ input {
 }
 
 button {
+  -webkit-appearance: none;
+  appearance: none;
   color: inherit;
+  touch-action: manipulation;
+  transition: transform 110ms ease, opacity 110ms ease, background-color 180ms ease;
+}
+
+button:active {
+  transform: scale(0.96);
+  opacity: 0.76;
+}
+
+input {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 button:focus-visible,
@@ -58,7 +75,7 @@ input:focus-visible {
 
 .weather-scene {
   position: fixed;
-  z-index: -1;
+  z-index: 0;
   inset: 0;
   overflow: hidden;
   pointer-events: none;
@@ -101,6 +118,30 @@ input:focus-visible {
   background: rgba(230, 244, 240, 0.06);
 }
 
+.air-current {
+  position: absolute;
+  width: 58vw;
+  height: 1px;
+  border-radius: 1px;
+  background: rgba(242, 248, 244, 0.22);
+  box-shadow: 0 12px 0 rgba(242, 248, 244, 0.08);
+  animation: air-flow 7s ease-in-out infinite alternate;
+}
+
+.air-current-one {
+  top: 22%;
+  left: 8%;
+}
+
+.air-current-two {
+  top: 43%;
+  right: -8%;
+  width: 42vw;
+  opacity: 0.55;
+  animation-delay: -3.5s;
+  animation-direction: alternate-reverse;
+}
+
 .sun-disc,
 .moon-disc {
   position: absolute;
@@ -109,7 +150,7 @@ input:focus-visible {
   width: 104px;
   aspect-ratio: 1;
   border-radius: 50%;
-  animation: celestial-drift 12s ease-in-out infinite alternate;
+  animation: celestial-drift 5.5s ease-in-out infinite alternate;
 }
 
 .sun-disc {
@@ -128,9 +169,9 @@ input:focus-visible {
   width: 230px;
   height: 65px;
   border-radius: 50%;
-  background: rgba(223, 232, 230, 0.22);
-  filter: blur(8px);
-  animation: cloud-travel 25s linear infinite;
+  background: rgba(223, 232, 230, 0.32);
+  filter: blur(6px);
+  animation: cloud-drift 11s ease-in-out infinite alternate;
 }
 
 .cloud-shape::before,
@@ -156,26 +197,29 @@ input:focus-visible {
 }
 
 .cloud-one {
-  top: 11%;
-  left: -180px;
+  top: 12%;
+  left: -55px;
 }
 
 .cloud-two {
   top: 29%;
-  left: -250px;
-  opacity: 0.6;
-  transform: scale(0.75);
-  animation-duration: 34s;
-  animation-delay: -15s;
+  right: -80px;
+  width: 180px;
+  height: 52px;
+  opacity: 0.72;
+  animation-duration: 8s;
+  animation-delay: -4s;
+  animation-direction: alternate-reverse;
 }
 
 .cloud-three {
-  top: 55%;
-  left: -210px;
-  opacity: 0.35;
-  transform: scale(1.15);
-  animation-duration: 42s;
-  animation-delay: -28s;
+  top: 58%;
+  left: 18%;
+  width: 280px;
+  height: 80px;
+  opacity: 0.42;
+  animation-duration: 14s;
+  animation-delay: -7s;
 }
 
 .fog-lines {
@@ -190,7 +234,7 @@ input:focus-visible {
   height: 34px;
   background: rgba(231, 237, 232, 0.14);
   filter: blur(12px);
-  animation: fog-breathe 10s ease-in-out infinite alternate;
+  animation: fog-breathe 5s ease-in-out infinite alternate;
 }
 
 .fog-lines i:nth-child(even) {
@@ -209,11 +253,11 @@ input:focus-visible {
   position: absolute;
   top: -12%;
   left: calc((var(--n, 1)) * 5%);
-  width: 1px;
-  height: 38px;
-  background: rgba(219, 235, 237, 0.42);
+  width: 2px;
+  height: 42px;
+  background: rgba(219, 235, 237, 0.58);
   transform: rotate(8deg);
-  animation: rain-fall 1.25s linear infinite;
+  animation: rain-fall 0.95s linear infinite;
 }
 
 .rain-field i:nth-child(3n) {
@@ -252,7 +296,7 @@ input:focus-visible {
 
 .snow-field i {
   top: -5%;
-  animation: snow-fall 7s linear infinite;
+  animation: snow-fall 4.8s linear infinite;
 }
 
 .snow-field i:nth-child(1), .stars i:nth-child(1) { left: 5%; animation-delay: -1s; }
@@ -274,9 +318,9 @@ input:focus-visible {
 
 .stars i {
   top: calc(4% + (var(--n, 1) * 3%));
-  width: 2px;
+  width: 3px;
   opacity: 0.5;
-  animation: star-pulse 4s ease-in-out infinite alternate;
+  animation: star-pulse 2.8s ease-in-out infinite alternate;
 }
 
 .stars i:nth-child(3n) { top: 14%; }
@@ -570,6 +614,8 @@ footer {
 }
 
 .center-state {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -760,15 +806,21 @@ footer {
 }
 
 @keyframes celestial-drift {
-  to { transform: translate3d(-12px, 8px, 0); }
+  to { transform: translate3d(-22px, 13px, 0) scale(1.04); }
 }
 
-@keyframes cloud-travel {
-  to { transform: translate3d(calc(100vw + 470px), 0, 0); }
+@keyframes air-flow {
+  from { transform: translate3d(-12vw, 0, 0); opacity: 0.25; }
+  to { transform: translate3d(28vw, 5px, 0); opacity: 0.8; }
+}
+
+@keyframes cloud-drift {
+  from { transform: translate3d(-30px, -3px, 0); }
+  to { transform: translate3d(72px, 8px, 0); }
 }
 
 @keyframes fog-breathe {
-  to { transform: translateX(12%); opacity: 0.55; }
+  to { transform: translateX(18%); opacity: 0.68; }
 }
 
 @keyframes rain-fall {

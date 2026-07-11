@@ -9,6 +9,7 @@ import {
   Moon,
   Sun,
 } from "lucide-react";
+import type { CSSProperties } from "react";
 
 export type SceneKind = "clear" | "cloud" | "fog" | "rain" | "snow" | "storm";
 
@@ -38,6 +39,8 @@ export function WeatherScene({ code, isDay }: { code: number; isDay: boolean }) 
   return (
     <div className={`weather-scene scene-${kind} ${isDay ? "day" : "night"}`} aria-hidden="true">
       <div className="sky-light" />
+      <div className="air-current air-current-one" />
+      <div className="air-current air-current-two" />
       {kind === "clear" && <div className={isDay ? "sun-disc" : "moon-disc"} />}
       {(kind === "cloud" || kind === "rain" || kind === "storm") && (
         <>
@@ -48,12 +51,29 @@ export function WeatherScene({ code, isDay }: { code: number; isDay: boolean }) 
       )}
       {kind === "fog" && <div className="fog-lines"><i /><i /><i /><i /></div>}
       {(kind === "rain" || kind === "storm") && (
-        <div className="rain-field">{Array.from({ length: 18 }, (_, index) => <i key={index} />)}</div>
+        <div className="rain-field">
+          {Array.from({ length: 32 }, (_, index) => <i key={index} style={particleStyle(index, 32, 0.91)} />)}
+        </div>
       )}
       {kind === "snow" && (
-        <div className="snow-field">{Array.from({ length: 16 }, (_, index) => <i key={index} />)}</div>
+        <div className="snow-field">
+          {Array.from({ length: 24 }, (_, index) => <i key={index} style={particleStyle(index, 24, 4.63)} />)}
+        </div>
       )}
-      {!isDay && <div className="stars">{Array.from({ length: 14 }, (_, index) => <i key={index} />)}</div>}
+      {!isDay && (
+        <div className="stars">
+          {Array.from({ length: 22 }, (_, index) => (
+            <i key={index} style={{ left: `${(index * 37 + 7) % 96}%`, top: `${6 + (index * 19) % 38}%`, animationDelay: `${-(index % 7) * 0.4}s` }} />
+          ))}
+        </div>
+      )}
     </div>
   );
+}
+
+function particleStyle(index: number, count: number, duration: number): CSSProperties {
+  return {
+    left: `${((index * 43) % count) / count * 100}%`,
+    animationDelay: `${-(index * duration / 7)}s`,
+  };
 }

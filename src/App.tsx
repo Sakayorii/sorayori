@@ -7,21 +7,16 @@ import {
 } from "@tauri-apps/plugin-geolocation";
 import {
   ChevronRight,
-  Droplets,
-  LocateFixed,
   MapPin,
-  Navigation,
   RefreshCw,
-  Search,
   Settings as SettingsIcon,
-  Sunrise,
-  Sunset,
-  Wind,
   X,
 } from "lucide-react";
-import { translate, weatherLabel } from "./i18n";
+import { SearchPanel, SettingsPanel } from "./components/AppPanels";
+import { WeatherDashboard } from "./components/WeatherDashboard";
+import { translate } from "./i18n";
 import type { Locale, Place, Settings, WeatherReport } from "./types";
-import { WeatherIcon, WeatherScene } from "./weather";
+import { WeatherScene } from "./weather";
 
 const defaultPlace: Place = {
   id: 0,
@@ -195,77 +190,12 @@ export default function App() {
           </button>
         </section>
       ) : report ? (
-        <div className="weather-content">
-          <section className="current-block">
-            <div className="current-condition">
-              <WeatherIcon code={report.current.weatherCode} isDay={report.current.isDay} size={25} />
-              <span>{t(weatherLabel(report.current.weatherCode))}</span>
-            </div>
-            <div className="temperature">{formatTemperature(report.current.temperature, settings.temperatureUnit)}</div>
-            <p className="feels-like">
-              {t("feelsLike")} {formatTemperature(report.current.apparentTemperature, settings.temperatureUnit)}
-            </p>
-            <p className="high-low">
-              {formatTemperature(report.daily[0]?.temperatureMax ?? report.current.temperature, settings.temperatureUnit)}
-              <span />
-              {formatTemperature(report.daily[0]?.temperatureMin ?? report.current.temperature, settings.temperatureUnit)}
-            </p>
-          </section>
-
-          {(error || report.fromCache) && (
-            <div className="status-strip" role="status">
-              <span>{report.fromCache ? t("cached") : error}</span>
-              <button onClick={() => void loadWeather(place, true)} aria-label={t("retry")}><RefreshCw size={15} /></button>
-            </div>
-          )}
-
-          <section className="forecast-section">
-            <h2>{t("hourly")}</h2>
-            <div className="hourly-list">
-              {nextHours(report).map((hour, index) => (
-                <div className="hour-item" key={hour.time}>
-                  <time>{index === 0 ? t("now") : hour.time.slice(11, 16)}</time>
-                  <WeatherIcon code={hour.weatherCode} isDay={hour.isDay} size={22} />
-                  <strong>{formatTemperature(hour.temperature, settings.temperatureUnit)}</strong>
-                  <small>{hour.precipitationProbability}%</small>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="metrics-grid">
-            <Metric icon={<Droplets />} label={t("humidity")} value={`${report.current.humidity}%`} />
-            <Metric icon={<Wind />} label={t("wind")} value={formatSpeed(report.current.windSpeed, settings.speedUnit)} />
-            <Metric icon={<CloudRainIcon />} label={t("rain")} value={`${report.daily[0]?.precipitationProbability ?? 0}%`} />
-            <Metric icon={<LocateFixed />} label={t("uv")} value={String(Math.round(report.daily[0]?.uvIndexMax ?? 0))} />
-          </section>
-
-          <section className="sun-times">
-            <div><Sunrise /><span>{t("sunrise")}</span><strong>{report.daily[0]?.sunrise.slice(11, 16)}</strong></div>
-            <div><Sunset /><span>{t("sunset")}</span><strong>{report.daily[0]?.sunset.slice(11, 16)}</strong></div>
-          </section>
-
-          <section className="daily-section">
-            <h2>{t("nextDays")}</h2>
-            <div className="daily-list">
-              {report.daily.slice(1, 8).map((day) => (
-                <div className="day-row" key={day.date}>
-                  <time>{weekday(day.date, settings.locale)}</time>
-                  <div className="day-rain"><Droplets size={13} />{day.precipitationProbability}%</div>
-                  <WeatherIcon code={day.weatherCode} isDay size={22} />
-                  <div className="day-temps">
-                    <strong>{formatTemperature(day.temperatureMax, settings.temperatureUnit)}</strong>
-                    <span>{formatTemperature(day.temperatureMin, settings.temperatureUnit)}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <footer>
-            {t("updated")} {formatUpdated(report.fetchedAt, settings.locale)}
-          </footer>
-        </div>
+        <WeatherDashboard
+          report={report}
+          settings={settings}
+          error={error}
+          onRefresh={() => void loadWeather(place, true)}
+        />
       ) : null}
 
       {panel && (
@@ -294,98 +224,4 @@ export default function App() {
       )}
     </main>
   );
-}
-
-function SearchPanel({ query, setQuery, results, searching, locale, onChoose, onCurrentLocation }: {
-  query: string;
-  setQuery: (value: string) => void;
-  results: Place[];
-  searching: boolean;
-  locale: Locale;
-  onChoose: (place: Place) => void;
-  onCurrentLocation: () => void;
-}) {
-  const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
-  return (
-    <div className="search-panel">
-      <label className="search-field">
-        <Search size={19} />
-        <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("search")} />
-        {query && <button onClick={() => setQuery("")} aria-label={t("close")}><X size={17} /></button>}
-      </label>
-      <button className="current-location-row" onClick={onCurrentLocation}>
-        <Navigation size={19} />
-        <span>{t("currentLocation")}</span>
-        <ChevronRight size={17} />
-      </button>
-      <div className="search-results" aria-live="polite">
-        {searching && <div className="search-message">{t("loading")}</div>}
-        {!searching && query.trim().length < 2 && <div className="search-message">{t("searchHint")}</div>}
-        {!searching && query.trim().length >= 2 && results.length === 0 && <div className="search-message">{t("noResults")}</div>}
-        {!searching && results.map((result) => (
-          <button className="place-row" key={result.id} onClick={() => onChoose(result)}>
-            <MapPin size={18} />
-            <span><strong>{result.name}</strong><small>{[result.admin1, result.country].filter(Boolean).join(", ")}</small></span>
-            <ChevronRight size={17} />
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function SettingsPanel({ settings, update }: { settings: Settings; update: (next: Partial<Settings>) => void }) {
-  const t = (key: Parameters<typeof translate>[1]) => translate(settings.locale, key);
-  return (
-    <div className="settings-panel">
-      <div className="setting-row">
-        <span>{t("language")}</span>
-        <div className="segmented">
-          <button className={settings.locale === "vi" ? "active" : ""} onClick={() => update({ locale: "vi" })}>VI</button>
-          <button className={settings.locale === "en" ? "active" : ""} onClick={() => update({ locale: "en" })}>EN</button>
-        </div>
-      </div>
-      <div className="setting-row">
-        <span>{t("units")}</span>
-        <div className="segmented">
-          <button className={settings.temperatureUnit === "celsius" ? "active" : ""} onClick={() => update({ temperatureUnit: "celsius", speedUnit: "kmh" })}>°C</button>
-          <button className={settings.temperatureUnit === "fahrenheit" ? "active" : ""} onClick={() => update({ temperatureUnit: "fahrenheit", speedUnit: "mph" })}>°F</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return <div className="metric">{icon}<span>{label}</span><strong>{value}</strong></div>;
-}
-
-function CloudRainIcon() {
-  return <Droplets />;
-}
-
-function formatTemperature(value: number, unit: Settings["temperatureUnit"]): string {
-  const temperature = unit === "fahrenheit" ? value * 9 / 5 + 32 : value;
-  return `${Math.round(temperature)}°`;
-}
-
-function formatSpeed(value: number, unit: Settings["speedUnit"]): string {
-  return unit === "mph" ? `${Math.round(value * 0.621371)} mph` : `${Math.round(value)} km/h`;
-}
-
-function weekday(date: string, locale: Locale): string {
-  return new Intl.DateTimeFormat(locale === "vi" ? "vi-VN" : "en-US", { weekday: "long" })
-    .format(new Date(`${date}T12:00:00`));
-}
-
-function formatUpdated(date: string, locale: Locale): string {
-  return new Intl.DateTimeFormat(locale === "vi" ? "vi-VN" : "en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(date));
-}
-
-function nextHours(report: WeatherReport) {
-  const currentIndex = report.hourly.findIndex((hour) => hour.time >= report.current.time.slice(0, 13));
-  return report.hourly.slice(Math.max(0, currentIndex), Math.max(0, currentIndex) + 24);
 }
