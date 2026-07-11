@@ -1,0 +1,10 @@
+node_modules
+dist
+target
+src-tauri/gen
+.idea
+.vscode
+*.jks
+*.keystore
+local.properties
+key.properties
