@@ -48,7 +48,17 @@ jobs:
         run: npm run tauri android init -- --ci
 
       - name: Build release APK
-        run: npm run tauri android build -- --target aarch64 armv7 --apk --ci
+        run: |
+          BUILD_LOG="$RUNNER_TEMP/android-build.log"
+          if npm run tauri android build -- --target aarch64 armv7 --apk --ci > "$BUILD_LOG" 2>&1; then
+            echo "Android release APK built successfully."
+          else
+            STATUS=$?
+            echo "::group::Android build log"
+            cat "$BUILD_LOG"
+            echo "::endgroup::"
+            exit "$STATUS"
+          fi
 
       - name: Restore signing key
         env:
