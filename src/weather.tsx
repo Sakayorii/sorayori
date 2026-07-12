@@ -43,11 +43,7 @@ export function WeatherScene({ code, isDay }: { code: number; isDay: boolean }) 
       <div className="air-current air-current-two" />
       {kind === "clear" && <div className={isDay ? "sun-disc" : "moon-disc"} />}
       {(kind === "cloud" || kind === "rain" || kind === "storm") && (
-        <>
-          <div className="cloud-shape cloud-one" />
-          <div className="cloud-shape cloud-two" />
-          <div className="cloud-shape cloud-three" />
-        </>
+        <div className="cloud-photo-layer" />
       )}
       {kind === "fog" && <div className="fog-lines"><i /><i /><i /><i /></div>}
       {(kind === "rain" || kind === "storm") && (

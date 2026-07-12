@@ -164,62 +164,25 @@ input:focus-visible {
   box-shadow: 0 0 38px rgba(220, 226, 220, 0.28);
 }
 
-.cloud-shape {
+.cloud-photo-layer {
   position: absolute;
-  width: 230px;
-  height: 65px;
-  border-radius: 50%;
-  background: rgba(223, 232, 230, 0.32);
-  filter: blur(6px);
-  animation: cloud-drift 11s ease-in-out infinite alternate;
+  inset: -5%;
+  background-image: url("/assets/cloud-sky.jpg");
+  background-position: 50% 64%;
+  background-size: cover;
+  opacity: 0.62;
+  animation: cloud-photo-drift 14s ease-in-out infinite alternate;
 }
 
-.cloud-shape::before,
-.cloud-shape::after {
-  position: absolute;
-  content: "";
-  border-radius: 50%;
-  background: inherit;
+.night .cloud-photo-layer {
+  opacity: 0.3;
+  filter: brightness(0.38) saturate(0.7);
 }
 
-.cloud-shape::before {
-  width: 110px;
-  height: 100px;
-  left: 30px;
-  bottom: 8px;
-}
-
-.cloud-shape::after {
-  width: 130px;
-  height: 120px;
-  right: 22px;
-  bottom: 0;
-}
-
-.cloud-one {
-  top: 12%;
-  left: -55px;
-}
-
-.cloud-two {
-  top: 29%;
-  right: -80px;
-  width: 180px;
-  height: 52px;
-  opacity: 0.72;
-  animation-duration: 8s;
-  animation-delay: -4s;
-  animation-direction: alternate-reverse;
-}
-
-.cloud-three {
-  top: 58%;
-  left: 18%;
-  width: 280px;
-  height: 80px;
-  opacity: 0.42;
-  animation-duration: 14s;
-  animation-delay: -7s;
+.scene-rain .cloud-photo-layer,
+.scene-storm .cloud-photo-layer {
+  opacity: 0.38;
+  filter: brightness(0.58) saturate(0.55);
 }
 
 .fog-lines {
@@ -814,9 +777,9 @@ footer {
   to { transform: translate3d(28vw, 5px, 0); opacity: 0.8; }
 }
 
-@keyframes cloud-drift {
-  from { transform: translate3d(-30px, -3px, 0); }
-  to { transform: translate3d(72px, 8px, 0); }
+@keyframes cloud-photo-drift {
+  from { transform: translate3d(-2%, 0, 0) scale(1.04); }
+  to { transform: translate3d(2%, -2%, 0) scale(1.1); }
 }
 
 @keyframes fog-breathe {

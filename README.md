@@ -49,3 +49,7 @@ Sau khi workflow hoàn tất, APK nằm trong artifact `Sorayori-Android-release
 - `src-tauri/src/weather.rs`: Open-Meteo client, chuẩn hóa dữ liệu và cache.
 - `src-tauri/capabilities`: quyền Tauri tối thiểu cho vị trí.
 - `.github/workflows`: pipeline build và ký APK.
+
+## Hình ảnh
+
+Ảnh mây dùng cho launcher icon và weather scene: [Wil Stewart trên Unsplash](https://unsplash.com/photos/K_TbABnVzHo), theo Unsplash License.
