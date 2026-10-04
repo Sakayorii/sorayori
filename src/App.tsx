@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useState } from "react";
+import { useDeferredValue, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import {
   checkPermissions,
@@ -10,10 +10,11 @@ import {
   MapPin,
   RefreshCw,
   Settings as SettingsIcon,
-  X,
 } from "lucide-react";
 import { SearchPanel, SettingsPanel } from "./components/AppPanels";
 import { WeatherDashboard } from "./components/WeatherDashboard";
+import { BottomSheet } from "./components/BottomSheet";
+import { usePageVisibility, usePresence, useReducedMotion } from "./motion";
 import { translate } from "./i18n";
 import type { Locale, Place, Settings, WeatherReport } from "./types";
 import { WeatherScene } from "./weather";
@@ -58,14 +59,19 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [panel, setPanel] = useState<"search" | "settings" | null>(null);
+  const reduced = useReducedMotion();
+  const visible = usePageVisibility();
+  const presentPanel = usePresence(panel, reduced ? 0 : 240);
+  const requestId = useRef(0);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Place[]>([]);
   const [searching, setSearching] = useState(false);
   const deferredQuery = useDeferredValue(query.trim());
   const t = (key: Parameters<typeof translate>[1]) => translate(settings.locale, key);
 
-  async function loadWeather(nextPlace: Place, quiet = false) {
-    if (!quiet) setLoading(true);
+  async function loadWeather(nextPlace: Place) {
+    const id = ++requestId.current;
+    setLoading(true);
     setError("");
     try {
       const data = await invoke<WeatherReport>("fetch_weather", {
@@ -73,13 +79,14 @@ export default function App() {
         longitude: nextPlace.longitude,
         locationName: nextPlace.name,
       });
+      if (id !== requestId.current) return;
       setReport(data);
       setPlace(nextPlace);
       localStorage.setItem("sorayori.place", JSON.stringify(nextPlace));
     } catch {
-      setError(t("networkError"));
+      if (id === requestId.current) setError(t("networkError"));
     } finally {
-      setLoading(false);
+      if (id === requestId.current) setLoading(false);
     }
   }
 
@@ -164,15 +171,15 @@ export default function App() {
   const weatherCode = report?.current.weatherCode ?? 1;
 
   return (
-    <main className={`app-shell ${isDay ? "app-day" : "app-night"}`}>
+    <main className={`app-shell ${isDay ? "app-day" : "app-night"}`} data-paused={!visible || !!presentPanel}>
       <WeatherScene code={weatherCode} isDay={isDay} />
       <header className="topbar">
-        <button className="location-button" onClick={() => setPanel("search")}>
+        <button className="location-button glass-control" onClick={() => setPanel("search")} aria-haspopup="dialog">
           <MapPin size={17} strokeWidth={1.8} />
           <span>{report?.locationName ?? place.name}</span>
           <ChevronRight size={16} />
         </button>
-        <button className="icon-button" onClick={() => setPanel("settings")} aria-label={t("settings")}>
+        <button className="icon-button glass-control" onClick={() => setPanel("settings")} aria-label={t("settings")} aria-haspopup="dialog">
           <SettingsIcon size={20} />
         </button>
       </header>
@@ -194,19 +201,14 @@ export default function App() {
           report={report}
           settings={settings}
           error={error}
-          onRefresh={() => void loadWeather(place, true)}
+          loading={loading}
+          onRefresh={() => void loadWeather(place)}
         />
       ) : null}
 
-      {panel && (
-        <div className="sheet-backdrop" onClick={() => setPanel(null)}>
-          <section className="bottom-sheet" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
-            <div className="sheet-handle" />
-            <div className="sheet-title">
-              <h2>{panel === "search" ? t("search") : t("settings")}</h2>
-              <button className="icon-button dark" onClick={() => setPanel(null)} aria-label={t("close")}><X size={20} /></button>
-            </div>
-            {panel === "search" ? (
+      {presentPanel && (
+        <BottomSheet title={presentPanel === "search" ? t("search") : t("settings")} closeLabel={t("close")} closing={!panel} onClose={() => setPanel(null)}>
+            {presentPanel === "search" ? (
               <SearchPanel
                 query={query}
                 setQuery={setQuery}
@@ -219,8 +221,7 @@ export default function App() {
             ) : (
               <SettingsPanel settings={settings} update={updateSettings} />
             )}
-          </section>
-        </div>
+        </BottomSheet>
       )}
     </main>
   );

@@ -1,4 +1,5 @@
-import { Droplets, LocateFixed, RefreshCw, Sunrise, Sunset, Wind } from "lucide-react";
+import { CloudRain, Droplets, Sun, RefreshCw, Sunrise, Sunset, Wind } from "lucide-react";
+import { AnimatedTemperature } from "./AnimatedTemperature";
 import { formatSpeed, formatTemperature, formatUpdated, nextHours, weekday } from "../format";
 import { translate, weatherLabel } from "../i18n";
 import type { Settings, WeatherReport } from "../types";
@@ -8,21 +9,22 @@ interface WeatherDashboardProps {
   report: WeatherReport;
   settings: Settings;
   error: string;
+  loading: boolean;
   onRefresh: () => void;
 }
 
-export function WeatherDashboard({ report, settings, error, onRefresh }: WeatherDashboardProps) {
+export function WeatherDashboard({ report, settings, error, loading, onRefresh }: WeatherDashboardProps) {
   const t = (key: Parameters<typeof translate>[1]) => translate(settings.locale, key);
   const today = report.daily[0];
 
   return (
-    <div className="weather-content">
+    <div className="weather-content" aria-busy={loading}>
       <section className="current-block">
         <div className="current-condition">
           <WeatherIcon code={report.current.weatherCode} isDay={report.current.isDay} size={25} />
           <span>{t(weatherLabel(report.current.weatherCode))}</span>
         </div>
-        <div className="temperature">{formatTemperature(report.current.temperature, settings.temperatureUnit)}</div>
+        <AnimatedTemperature value={report.current.temperature} unit={settings.temperatureUnit} />
         <p className="feels-like">
           {t("feelsLike")} {formatTemperature(report.current.apparentTemperature, settings.temperatureUnit)}
         </p>
@@ -36,15 +38,18 @@ export function WeatherDashboard({ report, settings, error, onRefresh }: Weather
       {(error || report.fromCache) && (
         <div className="status-strip" role="status">
           <span>{report.fromCache ? t("cached") : error}</span>
-          <button onClick={onRefresh} aria-label={t("retry")}><RefreshCw size={15} /></button>
+          <button onClick={onRefresh} disabled={loading} aria-label={t("retry")}><RefreshCw size={15} /></button>
         </div>
       )}
 
-      <section className="forecast-section">
-        <h2>{t("hourly")}</h2>
+      <section className="forecast-section glass-surface">
+        <div className="section-heading">
+          <h2>{t("hourly")}</h2>
+          <button className={`refresh-button${loading ? " is-loading" : ""}`} disabled={loading} onClick={onRefresh} aria-label={t("retry")}><RefreshCw size={17} /></button>
+        </div>
         <div className="hourly-list">
           {nextHours(report).map((hour, index) => (
-            <div className="hour-item" key={hour.time}>
+            <div className={`hour-item${index === 0 ? " is-current" : ""}`} key={hour.time}>
               <time>{index === 0 ? t("now") : hour.time.slice(11, 16)}</time>
               <WeatherIcon code={hour.weatherCode} isDay={hour.isDay} size={22} />
               <strong>{formatTemperature(hour.temperature, settings.temperatureUnit)}</strong>
@@ -57,8 +62,8 @@ export function WeatherDashboard({ report, settings, error, onRefresh }: Weather
       <section className="metrics-grid">
         <Metric icon={<Droplets />} label={t("humidity")} value={`${report.current.humidity}%`} />
         <Metric icon={<Wind />} label={t("wind")} value={formatSpeed(report.current.windSpeed, settings.speedUnit)} />
-        <Metric icon={<Droplets />} label={t("rain")} value={`${today?.precipitationProbability ?? 0}%`} />
-        <Metric icon={<LocateFixed />} label={t("uv")} value={String(Math.round(today?.uvIndexMax ?? 0))} />
+        <Metric icon={<CloudRain />} label={t("rain")} value={`${today?.precipitationProbability ?? 0}%`} />
+        <Metric icon={<Sun />} label={t("uv")} value={String(Math.round(today?.uvIndexMax ?? 0))} />
       </section>
 
       <section className="sun-times">

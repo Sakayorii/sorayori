@@ -16,7 +16,7 @@ export function SearchPanel({ query, setQuery, results, searching, locale, onCho
     <div className="search-panel">
       <label className="search-field">
         <Search size={19} />
-        <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("search")} />
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("search")} aria-label={t("search")} autoComplete="off" enterKeyHint="search" />
         {query && <button onClick={() => setQuery("")} aria-label={t("close")}><X size={17} /></button>}
       </label>
       <button className="current-location-row" onClick={onCurrentLocation}>
@@ -46,16 +46,18 @@ export function SettingsPanel({ settings, update }: { settings: Settings; update
     <div className="settings-panel">
       <div className="setting-row">
         <span>{t("language")}</span>
-        <div className="segmented">
-          <button className={settings.locale === "vi" ? "active" : ""} onClick={() => update({ locale: "vi" })}>VI</button>
-          <button className={settings.locale === "en" ? "active" : ""} onClick={() => update({ locale: "en" })}>EN</button>
+        <div className="segmented" data-index={settings.locale === "vi" ? 0 : 1} role="group" aria-label={t("language")}>
+          <span className="segment-thumb" aria-hidden="true" />
+          <button aria-pressed={settings.locale === "vi"} onClick={() => update({ locale: "vi" })}>VI</button>
+          <button aria-pressed={settings.locale === "en"} onClick={() => update({ locale: "en" })}>EN</button>
         </div>
       </div>
       <div className="setting-row">
         <span>{t("units")}</span>
-        <div className="segmented">
-          <button className={settings.temperatureUnit === "celsius" ? "active" : ""} onClick={() => update({ temperatureUnit: "celsius", speedUnit: "kmh" })}>°C</button>
-          <button className={settings.temperatureUnit === "fahrenheit" ? "active" : ""} onClick={() => update({ temperatureUnit: "fahrenheit", speedUnit: "mph" })}>°F</button>
+        <div className="segmented" data-index={settings.temperatureUnit === "celsius" ? 0 : 1} role="group" aria-label={t("units")}>
+          <span className="segment-thumb" aria-hidden="true" />
+          <button aria-pressed={settings.temperatureUnit === "celsius"} onClick={() => update({ temperatureUnit: "celsius", speedUnit: "kmh" })}>°C</button>
+          <button aria-pressed={settings.temperatureUnit === "fahrenheit"} onClick={() => update({ temperatureUnit: "fahrenheit", speedUnit: "mph" })}>°F</button>
         </div>
       </div>
     </div>

@@ -1,15 +1,5 @@
-import {
-  Cloud,
-  CloudDrizzle,
-  CloudFog,
-  CloudLightning,
-  CloudRain,
-  CloudSnow,
-  CloudSun,
-  Moon,
-  Sun,
-} from "lucide-react";
-import type { CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
+import { useReducedMotion } from "./motion";
 
 export type SceneKind = "clear" | "cloud" | "fog" | "rain" | "snow" | "storm";
 
@@ -22,41 +12,79 @@ export function sceneKind(code: number): SceneKind {
   return "storm";
 }
 
+export function weatherIconName(code: number, isDay: boolean): string {
+  if (code === 0) return isDay ? "clear-day" : "clear-night";
+  if (code <= 1) return isDay ? "clear-day" : "clear-night";
+  if (code <= 2) return isDay ? "partly-cloudy-day" : "partly-cloudy-night";
+  if (code === 3) return "overcast";
+  if (code <= 48) return "fog";
+  if (code <= 57) return "drizzle";
+  if (code <= 67) return "rain";
+  if (code <= 77) return "snow";
+  if (code <= 82) return "rain";
+  if (code <= 86) return "snow";
+  return "thunderstorms-rain";
+}
+
 export function WeatherIcon({ code, isDay, size = 24 }: { code: number; isDay: boolean; size?: number }) {
-  const props = { size, strokeWidth: 1.7, "aria-hidden": true };
-  if (code === 0) return isDay ? <Sun {...props} /> : <Moon {...props} />;
-  if (code <= 2) return <CloudSun {...props} />;
-  if (code === 3) return <Cloud {...props} />;
-  if (code <= 48) return <CloudFog {...props} />;
-  if (code <= 57) return <CloudDrizzle {...props} />;
-  if (code <= 67 || (code >= 80 && code <= 82)) return <CloudRain {...props} />;
-  if (code <= 77 || (code >= 85 && code <= 86)) return <CloudSnow {...props} />;
-  return <CloudLightning {...props} />;
+  const name = weatherIconName(code, isDay);
+  return <img className="weather-icon" style={{ width: size, height: size }} src={`/assets/meteocons/${name}.svg`} alt="" aria-hidden="true" />;
 }
 
 export function WeatherScene({ code, isDay }: { code: number; isDay: boolean }) {
   const kind = sceneKind(code);
+  const key = `${kind}-${isDay}`;
+  const reduced = useReducedMotion();
+  const [layers, setLayers] = useState([{ key, kind, isDay }]);
+  useEffect(() => {
+    setLayers((previous) => {
+      const last = previous[previous.length - 1];
+      if (last.key === key) return previous;
+      return reduced ? [{ key, kind, isDay }] : [last, { key, kind, isDay }];
+    });
+    const timer = window.setTimeout(() => setLayers((previous) => previous.slice(-1)), 700);
+    return () => window.clearTimeout(timer);
+  }, [key, kind, isDay, reduced]);
+  return <div className="scene-stack" aria-hidden="true">{layers.map((layer) => <SceneLayer key={layer.key} kind={layer.kind} isDay={layer.isDay} />)}</div>;
+}
+
+function SceneLayer({ kind, isDay }: { kind: SceneKind; isDay: boolean }) {
   return (
     <div className={`weather-scene scene-${kind} ${isDay ? "day" : "night"}`} aria-hidden="true">
       <div className="sky-light" />
-      <div className="air-current air-current-one" />
-      <div className="air-current air-current-two" />
+      <div className="weather-art-layer">
+        <img src={`/assets/meteocons/${weatherIconName(kindCode(kind), isDay)}.svg`} alt="" />
+      </div>
       {kind === "clear" && <div className={isDay ? "sun-disc" : "moon-disc"} />}
       {(kind === "cloud" || kind === "rain" || kind === "storm") && (
-        <div className="cloud-photo-layer" />
+        <div className="cloud-group">
+          <div className="cloud-photo-layer cloud-back" />
+          <div className="cloud-photo-layer cloud-front" />
+        </div>
       )}
+      <div className="scene-shade" />
       {kind === "fog" && <div className="fog-lines"><i /><i /><i /><i /></div>}
       {(kind === "rain" || kind === "storm") && (
-        <div className="rain-field">
-          {Array.from({ length: 32 }, (_, index) => <i key={index} style={particleStyle(index, 32, 0.91)} />)}
-        </div>
+        <>
+          <div className="rain-field rain-back">
+            {Array.from({ length: 18 }, (_, index) => <i key={index} style={particleStyle(index, 18, 1.24)} />)}
+          </div>
+          <div className="rain-field rain-front">
+            {Array.from({ length: 24 }, (_, index) => <i key={index} style={particleStyle(index, 24, 0.82)} />)}
+          </div>
+        </>
       )}
       {kind === "snow" && (
-        <div className="snow-field">
-          {Array.from({ length: 24 }, (_, index) => <i key={index} style={particleStyle(index, 24, 4.63)} />)}
-        </div>
+        <>
+          <div className="snow-field snow-back">
+            {Array.from({ length: 14 }, (_, index) => <i key={index} style={particleStyle(index, 14, 7.2)} />)}
+          </div>
+          <div className="snow-field snow-front">
+            {Array.from({ length: 18 }, (_, index) => <i key={index} style={particleStyle(index, 18, 4.8)} />)}
+          </div>
+        </>
       )}
-      {!isDay && (
+      {!isDay && (kind === "clear" || kind === "cloud") && (
         <div className="stars">
           {Array.from({ length: 22 }, (_, index) => (
             <i key={index} style={{ left: `${(index * 37 + 7) % 96}%`, top: `${6 + (index * 19) % 38}%`, animationDelay: `${-(index % 7) * 0.4}s` }} />
@@ -67,9 +95,19 @@ export function WeatherScene({ code, isDay }: { code: number; isDay: boolean }) 
   );
 }
 
+function kindCode(kind: SceneKind): number {
+  if (kind === "clear") return 0;
+  if (kind === "cloud") return 2;
+  if (kind === "fog") return 45;
+  if (kind === "rain") return 63;
+  if (kind === "snow") return 75;
+  return 95;
+}
+
 function particleStyle(index: number, count: number, duration: number): CSSProperties {
   return {
     left: `${((index * 43) % count) / count * 100}%`,
     animationDelay: `${-(index * duration / 7)}s`,
+    animationDuration: `${duration * (1 + (index % 5) * 0.16)}s`,
   };
 }
