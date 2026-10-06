@@ -101,7 +101,7 @@ export function BottomSheet({ title, closeLabel, closing, onClose, children }: B
         </div>
         <div className="sheet-title">
           <h2 id={titleId}>{title}</h2>
-          <button className="icon-button dark" onClick={onClose} aria-label={closeLabel}><X size={20} /></button>
+          <button type="button" className="icon-button dark" onClick={onClose} aria-label={closeLabel}><X size={20} /></button>
         </div>
         {children}
       </section>

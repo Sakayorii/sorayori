@@ -174,12 +174,12 @@ export default function App() {
     <main className={`app-shell ${isDay ? "app-day" : "app-night"}`} data-paused={!visible || !!presentPanel}>
       <WeatherScene code={weatherCode} isDay={isDay} />
       <header className="topbar">
-        <button className="location-button glass-control" onClick={() => setPanel("search")} aria-haspopup="dialog">
+        <button type="button" className="location-button" onClick={() => setPanel("search")} aria-haspopup="dialog">
           <MapPin size={17} strokeWidth={1.8} />
           <span>{report?.locationName ?? place.name}</span>
           <ChevronRight size={16} />
         </button>
-        <button className="icon-button glass-control" onClick={() => setPanel("settings")} aria-label={t("settings")} aria-haspopup="dialog">
+        <button type="button" className="icon-button" onClick={() => setPanel("settings")} aria-label={t("settings")} aria-haspopup="dialog">
           <SettingsIcon size={20} />
         </button>
       </header>
@@ -192,7 +192,7 @@ export default function App() {
       ) : error && !report ? (
         <section className="center-state" role="alert">
           <p>{error}</p>
-          <button className="text-button" onClick={() => void loadWeather(place)}>
+          <button type="button" className="text-button" onClick={() => void loadWeather(place)}>
             <RefreshCw size={17} /> {t("retry")}
           </button>
         </section>
