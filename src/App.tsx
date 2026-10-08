@@ -14,6 +14,7 @@ import {
 import { SearchPanel, SettingsPanel } from "./components/AppPanels";
 import { WeatherDashboard } from "./components/WeatherDashboard";
 import { BottomSheet } from "./components/BottomSheet";
+import { TransitionSwap } from "./components/TransitionSwap";
 import { usePageVisibility, usePresence, useReducedMotion } from "./motion";
 import { translate } from "./i18n";
 import type { Locale, Place, Settings, WeatherReport } from "./types";
@@ -66,6 +67,8 @@ export default function App() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Place[]>([]);
   const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState(false);
+  const [locating, setLocating] = useState(false);
   const deferredQuery = useDeferredValue(query.trim());
   const t = (key: Parameters<typeof translate>[1]) => translate(settings.locale, key);
 
@@ -103,9 +106,13 @@ export default function App() {
     if (deferredQuery.length < 2) {
       setResults([]);
       setSearching(false);
+      setSearchError(false);
       return;
     }
     let active = true;
+    setSearching(true);
+    setSearchError(false);
+    setResults([]);
     const timer = window.setTimeout(async () => {
       setSearching(true);
       try {
@@ -115,7 +122,7 @@ export default function App() {
         });
         if (active) setResults(places);
       } catch {
-        if (active) setResults([]);
+        if (active) { setResults([]); setSearchError(true); }
       } finally {
         if (active) setSearching(false);
       }
@@ -127,6 +134,8 @@ export default function App() {
   }, [deferredQuery, settings.locale]);
 
   async function useCurrentLocation() {
+    if (locating) return;
+    setLocating(true);
     setError("");
     try {
       let permissions = await checkPermissions();
@@ -154,6 +163,8 @@ export default function App() {
     } catch {
       setError(t("locationError"));
       setPanel(null);
+    } finally {
+      setLocating(false);
     }
   }
 
@@ -172,7 +183,7 @@ export default function App() {
 
   return (
     <main className={`app-shell ${isDay ? "app-day" : "app-night"}`} data-paused={!visible || !!presentPanel}>
-      <WeatherScene code={weatherCode} isDay={isDay} />
+      <WeatherScene code={weatherCode} isDay={isDay} active={visible && !presentPanel} />
       <header className="topbar">
         <button type="button" className="location-button" onClick={() => setPanel("search")} aria-haspopup="dialog">
           <MapPin size={17} strokeWidth={1.8} />
@@ -186,15 +197,19 @@ export default function App() {
 
       {loading && !report ? (
         <section className="center-state" aria-live="polite">
-          <div className="loading-mark"><i /><i /><i /></div>
+          <div className="launch-weather" aria-hidden="true"><span className="launch-sun" /><span className="launch-horizon" /><span className="launch-drop" /></div>
+          <h1>Sorayori</h1>
           <p>{t("loading")}</p>
         </section>
       ) : error && !report ? (
         <section className="center-state" role="alert">
+          <MapPin size={36} aria-hidden="true" />
+          <h1>{t("unavailable")}</h1>
           <p>{error}</p>
           <button type="button" className="text-button" onClick={() => void loadWeather(place)}>
             <RefreshCw size={17} /> {t("retry")}
           </button>
+          <button type="button" className="text-button" onClick={() => setPanel("search")}>{t("search")}</button>
         </section>
       ) : report ? (
         <WeatherDashboard
@@ -208,12 +223,15 @@ export default function App() {
 
       {presentPanel && (
         <BottomSheet title={presentPanel === "search" ? t("search") : t("settings")} closeLabel={t("close")} closing={!panel} onClose={() => setPanel(null)}>
+          <TransitionSwap identity={presentPanel}>
             {presentPanel === "search" ? (
               <SearchPanel
                 query={query}
                 setQuery={setQuery}
                 results={results}
                 searching={searching}
+                searchError={searchError}
+                locating={locating}
                 locale={settings.locale}
                 onChoose={choosePlace}
                 onCurrentLocation={() => void useCurrentLocation()}
@@ -221,6 +239,7 @@ export default function App() {
             ) : (
               <SettingsPanel settings={settings} update={updateSettings} />
             )}
+          </TransitionSwap>
         </BottomSheet>
       )}
     </main>

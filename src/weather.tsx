@@ -1,5 +1,6 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import { useReducedMotion } from "./motion";
+import { Precipitation } from "./components/Precipitation";
 
 export type SceneKind = "clear" | "cloud" | "fog" | "rain" | "snow" | "storm";
 
@@ -28,10 +29,10 @@ export function weatherIconName(code: number, isDay: boolean): string {
 
 export function WeatherIcon({ code, isDay, size = 24 }: { code: number; isDay: boolean; size?: number }) {
   const name = weatherIconName(code, isDay);
-  return <img className="weather-icon" style={{ width: size, height: size }} src={`/assets/meteocons/${name}.svg`} alt="" aria-hidden="true" />;
+  return <img className="weather-icon" style={{ width: size, height: size }} src={`/assets/meteocons/${name}-static.svg`} alt="" aria-hidden="true" draggable={false} />;
 }
 
-export function WeatherScene({ code, isDay }: { code: number; isDay: boolean }) {
+export function WeatherScene({ code, isDay, active = true }: { code: number; isDay: boolean; active?: boolean }) {
   const kind = sceneKind(code);
   const key = `${kind}-${isDay}`;
   const reduced = useReducedMotion();
@@ -45,10 +46,10 @@ export function WeatherScene({ code, isDay }: { code: number; isDay: boolean }) 
     const timer = window.setTimeout(() => setLayers((previous) => previous.slice(-1)), 700);
     return () => window.clearTimeout(timer);
   }, [key, kind, isDay, reduced]);
-  return <div className="scene-stack" aria-hidden="true">{layers.map((layer) => <SceneLayer key={layer.key} kind={layer.kind} isDay={layer.isDay} />)}</div>;
+  return <div className="scene-stack" aria-hidden="true">{layers.map((layer) => <SceneLayer key={layer.key} kind={layer.kind} isDay={layer.isDay} active={active && layer.key === key} />)}</div>;
 }
 
-function SceneLayer({ kind, isDay }: { kind: SceneKind; isDay: boolean }) {
+function SceneLayer({ kind, isDay, active }: { kind: SceneKind; isDay: boolean; active: boolean }) {
   return (
     <div className={`weather-scene scene-${kind} ${isDay ? "day" : "night"}`} aria-hidden="true">
       <div className="sky-light" />
@@ -64,26 +65,7 @@ function SceneLayer({ kind, isDay }: { kind: SceneKind; isDay: boolean }) {
       )}
       <div className="scene-shade" />
       {kind === "fog" && <div className="fog-lines"><i /><i /><i /><i /></div>}
-      {(kind === "rain" || kind === "storm") && (
-        <>
-          <div className="rain-field rain-back">
-            {Array.from({ length: 18 }, (_, index) => <i key={index} style={particleStyle(index, 18, 1.24)} />)}
-          </div>
-          <div className="rain-field rain-front">
-            {Array.from({ length: 24 }, (_, index) => <i key={index} style={particleStyle(index, 24, 0.82)} />)}
-          </div>
-        </>
-      )}
-      {kind === "snow" && (
-        <>
-          <div className="snow-field snow-back">
-            {Array.from({ length: 14 }, (_, index) => <i key={index} style={particleStyle(index, 14, 7.2)} />)}
-          </div>
-          <div className="snow-field snow-front">
-            {Array.from({ length: 18 }, (_, index) => <i key={index} style={particleStyle(index, 18, 4.8)} />)}
-          </div>
-        </>
-      )}
+      {(kind === "rain" || kind === "storm" || kind === "snow") && <Precipitation snow={kind === "snow"} active={active} />}
       {!isDay && (kind === "clear" || kind === "cloud") && (
         <div className="stars">
           {Array.from({ length: 22 }, (_, index) => (
@@ -102,12 +84,4 @@ function kindCode(kind: SceneKind): number {
   if (kind === "rain") return 63;
   if (kind === "snow") return 75;
   return 95;
-}
-
-function particleStyle(index: number, count: number, duration: number): CSSProperties {
-  return {
-    left: `${((index * 43) % count) / count * 100}%`,
-    animationDelay: `${-(index * duration / 7)}s`,
-    animationDuration: `${duration * (1 + (index % 5) * 0.16)}s`,
-  };
 }

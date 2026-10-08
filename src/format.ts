@@ -22,6 +22,7 @@ export function formatUpdated(date: string, locale: Locale): string {
 }
 
 export function nextHours(report: WeatherReport) {
-  const currentIndex = report.hourly.findIndex((hour) => hour.time >= report.current.time.slice(0, 13));
-  return report.hourly.slice(Math.max(0, currentIndex), Math.max(0, currentIndex) + 24);
+  const currentIndex = report.hourly.findIndex((hour) => hour.time.slice(0, 13) >= report.current.time.slice(0, 13));
+  if (currentIndex === -1) return [];
+  return report.hourly.slice(currentIndex, currentIndex + 24);
 }

@@ -1,5 +1,39 @@
 import { useEffect, useState } from "react";
 
+export function createSpring(onUpdate: (position: number, velocity: number) => void) {
+  let position = 0;
+  let velocity = 0;
+  let target = 0;
+  let frame = 0;
+  let last = 0;
+  const tick = (time: number) => {
+    const dt = Math.min((time - last) / 1000, .032);
+    last = time;
+    const steps = Math.max(1, Math.ceil(dt / .008));
+    for (let i = 0; i < steps; i++) {
+      const h = dt / steps;
+      velocity += (-380 * (position - target) - 2 * .85 * Math.sqrt(380) * velocity) * h;
+      position += velocity * h;
+    }
+    if (Math.abs(position - target) < .15 && Math.abs(velocity) < 2) {
+      position = target; velocity = 0; frame = 0;
+      onUpdate(position, velocity);
+      return;
+    }
+    onUpdate(position, velocity);
+    frame = requestAnimationFrame(tick);
+  };
+  return {
+    set(value: number) { cancelAnimationFrame(frame); frame = 0; position = value; velocity = 0; onUpdate(position, velocity); },
+    to(value: number, initialVelocity?: number) {
+      target = value;
+      if (initialVelocity !== undefined) velocity = initialVelocity;
+      if (!frame) { last = performance.now(); frame = requestAnimationFrame(tick); }
+    },
+    stop() { cancelAnimationFrame(frame); frame = 0; },
+  };
+}
+
 export function spatialFrames(from: number, to: number, velocity = 0) {
   const stiffness = 380;
   const dampingRatio = 0.8;
