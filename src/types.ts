@@ -60,4 +60,5 @@ export interface Settings {
   locale: Locale;
   temperatureUnit: TemperatureUnit;
   speedUnit: SpeedUnit;
+  atmosphere?: "full" | "still";
 }

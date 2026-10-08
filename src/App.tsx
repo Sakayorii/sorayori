@@ -39,6 +39,7 @@ function loadSettings(): Settings {
       locale: saved?.locale === "vi" || saved?.locale === "en" ? saved.locale : systemLocale(),
       temperatureUnit: saved?.temperatureUnit === "fahrenheit" ? "fahrenheit" : "celsius",
       speedUnit: saved?.speedUnit === "mph" ? "mph" : "kmh",
+      atmosphere: saved?.atmosphere === "still" ? "still" : "full",
     };
   } catch {
     return { locale: systemLocale(), temperatureUnit: "celsius", speedUnit: "kmh" };
@@ -182,8 +183,8 @@ export default function App() {
   const weatherCode = report?.current.weatherCode ?? 1;
 
   return (
-    <main className={`app-shell ${isDay ? "app-day" : "app-night"}`} data-paused={!visible || !!presentPanel}>
-      <WeatherScene code={weatherCode} isDay={isDay} active={visible && !presentPanel} />
+    <main className={`app-shell ${isDay ? "app-day" : "app-night"}`} data-paused={!visible || !!presentPanel || settings.atmosphere === "still"}>
+      <WeatherScene code={weatherCode} isDay={isDay} active={visible && !presentPanel && settings.atmosphere !== "still"} />
       <header className="topbar">
         <button type="button" className="location-button" onClick={() => setPanel("search")} aria-haspopup="dialog">
           <MapPin size={17} strokeWidth={1.8} />

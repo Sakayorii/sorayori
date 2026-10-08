@@ -53,10 +53,9 @@ function SceneLayer({ kind, isDay, active }: { kind: SceneKind; isDay: boolean; 
   return (
     <div className={`weather-scene scene-${kind} ${isDay ? "day" : "night"}`} aria-hidden="true">
       <div className="sky-light" />
-      <div className="weather-art-layer">
-        <img src={`/assets/meteocons/${weatherIconName(kindCode(kind), isDay)}.svg`} alt="" />
-      </div>
-      {kind === "clear" && <div className={isDay ? "sun-disc" : "moon-disc"} />}
+      {kind === "clear" && <div className={`celestial-art ${isDay ? "celestial-day" : "celestial-night"}`}>
+        <img src={`/assets/meteocons/${isDay ? "clear-day" : "clear-night"}-static.svg`} alt="" draggable={false} />
+      </div>}
       {(kind === "cloud" || kind === "rain" || kind === "storm") && (
         <div className="cloud-group">
           <div className="cloud-photo-layer cloud-back" />
@@ -75,13 +74,4 @@ function SceneLayer({ kind, isDay, active }: { kind: SceneKind; isDay: boolean; 
       )}
     </div>
   );
-}
-
-function kindCode(kind: SceneKind): number {
-  if (kind === "clear") return 0;
-  if (kind === "cloud") return 2;
-  if (kind === "fog") return 45;
-  if (kind === "rain") return 63;
-  if (kind === "snow") return 75;
-  return 95;
 }

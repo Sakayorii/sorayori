@@ -57,12 +57,42 @@ export function BottomSheet({ title, closeLabel, closing, onClose, children }: B
   }, [closing, reduced]);
 
   useEffect(() => {
+    const viewport = window.visualViewport;
+    let frame = 0;
+    const update = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const overlay = backdrop.current;
+        if (!overlay) return;
+        overlay.style.top = `${viewport?.offsetTop ?? 0}px`;
+        overlay.style.height = `${viewport?.height ?? window.innerHeight}px`;
+        const input = ref.current?.querySelector<HTMLInputElement>("input:focus");
+        if (input) {
+          const rect = input.getBoundingClientRect();
+          const bottom = (viewport?.offsetTop ?? 0) + (viewport?.height ?? window.innerHeight);
+          if (rect.bottom > bottom - 16 || rect.top < (viewport?.offsetTop ?? 0)) input.scrollIntoView({ block: "nearest", behavior: "auto" });
+        }
+      });
+    };
+    update();
+    viewport?.addEventListener("resize", update);
+    viewport?.addEventListener("scroll", update);
+    window.addEventListener("resize", update);
+    return () => {
+      cancelAnimationFrame(frame);
+      viewport?.removeEventListener("resize", update);
+      viewport?.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
+  useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const sheet = ref.current!;
-    const focusable = () => Array.from(sheet.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), [tabindex="0"]'));
-    (sheet.querySelector<HTMLInputElement>("input") ?? focusable()[0] ?? sheet).focus({ preventScroll: true });
+    const focusable = () => Array.from(sheet.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), [tabindex="0"]')).filter((node) => !node.closest('[inert], [aria-hidden="true"], [hidden]') && node.getClientRects().length > 0);
+    sheet.focus({ preventScroll: true });
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") { event.preventDefault(); close.current(); }
       if (event.key !== "Tab") return;
@@ -128,7 +158,7 @@ export function BottomSheet({ title, closeLabel, closing, onClose, children }: B
           <h2 id={titleId}>{title}</h2>
           <button type="button" className="icon-button dark" onClick={onClose} aria-label={closeLabel}><X size={20} /></button>
         </div>
-        {children}
+        <div className="sheet-body">{children}</div>
       </section>
     </div>
   );

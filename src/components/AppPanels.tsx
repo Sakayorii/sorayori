@@ -1,4 +1,4 @@
-import { ChevronRight, Languages, MapPin, Navigation, Search, Thermometer, X } from "lucide-react";
+import { ChevronRight, Languages, MapPin, Navigation, Search, Thermometer, Wind, X } from "lucide-react";
 import { translate } from "../i18n";
 import type { Locale, Place, Settings } from "../types";
 import { SegmentedControl } from "./SegmentedControl";
@@ -77,6 +77,10 @@ export function SettingsPanel({ settings, update }: { settings: Settings; update
         <SegmentedControl value={settings.speedUnit} label={t("wind")} options={[{ value: "kmh", label: "km/h" }, { value: "mph", label: "mph" }]} onChange={(speedUnit) => update({ speedUnit })} />
       </section>
       <p className="settings-footnote">{t("settingsApplied")}</p>
+      <section className="setting-row">
+        <div className="setting-copy"><span className="setting-icon" aria-hidden="true"><Wind size={19} /></span><span><strong>{t("atmosphere")}</strong><small>{t("atmosphereDescription")}</small></span></div>
+        <SegmentedControl value={settings.atmosphere ?? "full"} label={t("atmosphere")} options={[{ value: "full", label: t("animated") }, { value: "still", label: t("still") }]} onChange={(atmosphere) => update({ atmosphere })} />
+      </section>
     </div>
   );
 }

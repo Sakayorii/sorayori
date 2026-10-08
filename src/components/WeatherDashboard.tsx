@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import { ChevronDown, Cloud, CloudRain, Compass, Droplets, RefreshCw, Sun, Sunrise, Sunset, Wind } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, Cloud, CloudRain, Compass, Droplets, RefreshCw, Sun, Thermometer, Wind } from "lucide-react";
 import { AnimatedTemperature } from "./AnimatedTemperature";
 import { formatSpeed, formatTemperature, formatUpdated, nextHours } from "../format";
 import { translate, weatherLabel } from "../i18n";
@@ -11,6 +11,7 @@ import { DailyForecast } from "./DailyForecast";
 import { TransitionSwap } from "./TransitionSwap";
 import { useReducedMotion } from "../motion";
 import { ForecastProfile } from "./ForecastProfile";
+import { Daylight } from "./Daylight";
 
 interface WeatherDashboardProps {
   report: WeatherReport;
@@ -71,9 +72,8 @@ export function WeatherDashboard({ report, settings, error, loading, onRefresh }
           {t("feelsLike")} {formatTemperature(report.current.apparentTemperature, settings.temperatureUnit)}
         </p>
         <p className="high-low">
-          {formatTemperature(today?.temperatureMax ?? report.current.temperature, settings.temperatureUnit)}
-          <span />
-          {formatTemperature(today?.temperatureMin ?? report.current.temperature, settings.temperatureUnit)}
+          <ArrowUp size={14} aria-hidden="true" />{formatTemperature(today?.temperatureMax ?? report.current.temperature, settings.temperatureUnit)}
+          <ArrowDown size={14} aria-hidden="true" />{formatTemperature(today?.temperatureMin ?? report.current.temperature, settings.temperatureUnit)}
         </p>
       </section>
 
@@ -106,11 +106,11 @@ export function WeatherDashboard({ report, settings, error, loading, onRefresh }
       <section className="insight-strip" aria-label={t("outlook")}>
         <h2>{t("outlook")}</h2>
         <TransitionSwap identity={insight}><p>{insight}</p></TransitionSwap>
-        {events.length > 0 && <ol className="weather-events">{events.map((event) => <li key={`${event.kind}-${event.time}`}><time dateTime={event.time}>{event.time.slice(11, 16)}</time>{event.kind === "rain" ? <CloudRain size={17} aria-hidden="true" /> : event.kind === "temperature" ? <Wind size={17} aria-hidden="true" /> : <Sun size={17} aria-hidden="true" />}<span>{event.label}</span></li>)}</ol>}
+        {events.length > 0 && <ol className="weather-events">{events.map((event) => <li key={`${event.kind}-${event.time}`}><time dateTime={event.time}>{event.time.slice(11, 16)}</time>{event.kind === "rain" ? <CloudRain size={17} aria-hidden="true" /> : event.kind === "temperature" ? <Thermometer size={17} aria-hidden="true" /> : <Sun size={17} aria-hidden="true" />}<span>{event.label}</span></li>)}</ol>}
       </section>
 
       <section className="details-section">
-        <ForecastProfile hours={hours} settings={settings} />
+        <ForecastProfile hours={hours} settings={settings} selectedTime={selectedHour?.time} onSelect={setSelectedTime} />
         <div className="section-heading">
           <h2>{t("details")}</h2>
           <button type="button" className="details-toggle" aria-expanded={detailsOpen} aria-controls="expanded-weather-details" onClick={() => setDetailsOpen((open) => !open)}>
@@ -134,10 +134,7 @@ export function WeatherDashboard({ report, settings, error, loading, onRefresh }
         </Disclosure>
       </section>
 
-      <section className="sun-times">
-        <div><Sunrise /><span>{t("sunrise")}</span><strong>{today?.sunrise?.slice(11, 16) || "—"}</strong></div>
-        <div><Sunset /><span>{t("sunset")}</span><strong>{today?.sunset?.slice(11, 16) || "—"}</strong></div>
-      </section>
+      <Daylight day={today} time={report.current.time} locale={settings.locale} />
 
       <section className="daily-section">
         <h2>{t("nextDays")}</h2>
